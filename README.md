@@ -1,5 +1,7 @@
 # Preprocessing Service
 
+![Docker Publish (GHCR)](https://github.com/Gravitate-Health/preprocessing-service-cleaner/actions/workflows/docker-publish.yml/badge.svg?branch=main)
+
 ## Overview
 
 This service provides robust preprocessing for FHIR ePI (electronic Product Information) bundles, supporting extraction, validation, and modification of both FHIR extensions and embedded HTML content. It is designed for pharmaceutical and healthcare data pipelines, enabling safe and flexible manipulation of FHIR R4 resources, including custom extensions and XHTML narratives.
@@ -45,6 +47,32 @@ docker run --rm -p 8080:8080 preprocessing-service
 #### Generate server code from OpenAPI (if needed)
 ```powershell
 docker run --rm -v ${PWD}:/local openapitools/openapi-generator-cli generate -i https://raw.githubusercontent.com/Gravitate-Health/preprocessing-service-example/refs/heads/main/openapi.yaml -g python-flask -o /local/ --additional-properties=packageName=preprocessor
+```
+
+### 2.1 GHCR Image (recommended)
+
+Images are published automatically to GitHub Container Registry (GHCR) by CI for this repo and any forks.
+
+- Canonical image for this repo: `ghcr.io/gravitate-health/preprocessing-service-cleaner`
+- For forks: `ghcr.io/<your-github-username-or-org>/<your-fork-repo>`
+
+#### Pull
+```powershell
+docker pull ghcr.io/gravitate-health/preprocessing-service-cleaner:main
+# or a release tag, when available
+docker pull ghcr.io/gravitate-health/preprocessing-service-cleaner:v1.0.0
+```
+
+#### Run
+```powershell
+docker run --rm -p 8080:8080 ghcr.io/gravitate-health/preprocessing-service-cleaner:main
+```
+
+#### Authenticate (if needed)
+If the image is private or your org requires auth, login to GHCR:
+```powershell
+$env:CR_PAT = "<YOUR_GH_PAT_WITH_packages:read>"
+$env:CR_PAT | docker login ghcr.io -u <YOUR_GH_USERNAME> --password-stdin
 ```
 
 ### 3. API Endpoints
