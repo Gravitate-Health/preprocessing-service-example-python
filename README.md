@@ -1,6 +1,6 @@
 # Preprocessing Service
 
-![Docker Publish (GHCR)](https://github.com/Gravitate-Health/preprocessing-service-cleaner/actions/workflows/docker-publish.yml/badge.svg?branch=main)
+![Docker Publish (GHCR)](https://github.com/Gravitate-Health/preprocessing-service-example-python/actions/workflows/docker-publish.yml/badge.svg?branch=main)
 
 ## Overview
 
@@ -53,19 +53,19 @@ docker run --rm -v ${PWD}:/local openapitools/openapi-generator-cli generate -i 
 
 Images are published automatically to GitHub Container Registry (GHCR) by CI for this repo and any forks.
 
-- Canonical image for this repo: `ghcr.io/gravitate-health/preprocessing-service-cleaner`
+- Canonical image for this repo: `ghcr.io/gravitate-health/preprocessing-service-example-python`
 - For forks: `ghcr.io/<your-github-username-or-org>/<your-fork-repo>`
 
 #### Pull
 ```powershell
-docker pull ghcr.io/gravitate-health/preprocessing-service-cleaner:main
+docker pull ghcr.io/gravitate-health/preprocessing-service-example-python:main
 # or a release tag, when available
-docker pull ghcr.io/gravitate-health/preprocessing-service-cleaner:v1.0.0
+docker pull ghcr.io/gravitate-health/preprocessing-service-example-python:v1.0.0
 ```
 
 #### Run
 ```powershell
-docker run --rm -p 8080:8080 ghcr.io/gravitate-health/preprocessing-service-cleaner:main
+docker run --rm -p 8080:8080 ghcr.io/gravitate-health/preprocessing-service-example-python:main
 ```
 
 #### Authenticate (if needed)
