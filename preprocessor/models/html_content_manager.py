@@ -156,6 +156,127 @@ def get_html_content(composition: Dict[str, Any]) -> HtmlContent:
     return HtmlContent.from_composition(composition)
 
 
+def extract_all_html_from_sections(
+    sections: List[Dict[str, Any]],
+    results: Optional[List[Dict[str, Any]]] = None
+) -> List[Dict[str, Any]]:
+    """
+    Recursively extract HTML content from all sections and subsections
+    
+    Args:
+        sections: List of section dictionaries from a Composition
+        results: Accumulator for recursive calls (leave as None for initial call)
+    
+    Returns:
+        List of dictionaries containing section metadata and HTML content:
+        [
+            {
+                'title': 'Section Title',
+                'html': '<div>...</div>',
+                'code': {...},
+                'level': 0,  # nesting level (0 = top level)
+                'has_subsections': True/False
+            },
+            ...
+        ]
+    """
+    if results is None:
+        results = []
+    
+    if not sections or not isinstance(sections, list):
+        return results
+    
+    for section in sections:
+        if not isinstance(section, dict):
+            continue
+        
+        # Extract section metadata
+        section_info = {
+            'title': section.get('title', ''),
+            'code': section.get('code'),
+            'html': '',
+            'level': 0,
+            'has_subsections': False
+        }
+        
+        # Extract HTML from text.div
+        if 'text' in section and isinstance(section['text'], dict):
+            section_info['html'] = section['text'].get('div', '')
+        
+        # Check for subsections
+        if 'section' in section and isinstance(section['section'], list):
+            section_info['has_subsections'] = True
+        
+        results.append(section_info)
+        
+        # Recursively process subsections
+        if section_info['has_subsections']:
+            subsection_results = extract_all_html_from_sections(
+                section['section'],
+                []
+            )
+            # Update level for subsections
+            for subsection in subsection_results:
+                subsection['level'] = section_info['level'] + 1
+            results.extend(subsection_results)
+    
+    return results
+
+
+def get_all_html_content(composition: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Extract all HTML content from Composition including nested sections
+    
+    This function recursively extracts HTML from:
+    - composition.text.div (main composition HTML)
+    - All sections and their nested subsections
+    
+    Args:
+        composition: Composition resource dictionary
+    
+    Returns:
+        Dictionary with comprehensive HTML content:
+        {
+            'composition_html': '<div>...</div>',  # Main composition HTML
+            'sections': [  # All sections including nested
+                {
+                    'title': 'Section Title',
+                    'html': '<div>...</div>',
+                    'code': {...},
+                    'level': 0,  # nesting level
+                    'has_subsections': True/False
+                },
+                ...
+            ],
+            'total_sections': 10,
+            'max_nesting_level': 2
+        }
+    """
+    result = {
+        'composition_html': '',
+        'sections': [],
+        'total_sections': 0,
+        'max_nesting_level': 0
+    }
+    
+    # Extract main composition HTML
+    if 'text' in composition and isinstance(composition['text'], dict):
+        result['composition_html'] = composition['text'].get('div', '')
+    
+    # Extract all section HTML recursively
+    if 'section' in composition and isinstance(composition['section'], list):
+        result['sections'] = extract_all_html_from_sections(composition['section'])
+        result['total_sections'] = len(result['sections'])
+        
+        # Calculate max nesting level
+        if result['sections']:
+            result['max_nesting_level'] = max(
+                section['level'] for section in result['sections']
+            )
+    
+    return result
+
+
 def update_html_content(
     composition: Dict[str, Any],
     new_content: str
@@ -181,6 +302,46 @@ def update_html_content(
     
     composition["text"]["div"] = new_content
     return True
+
+
+def update_section_html(
+    sections: List[Dict[str, Any]],
+    section_title: str,
+    new_html: str,
+    recursive: bool = True
+) -> bool:
+    """
+    Update HTML content in a specific section by title (recursively searches subsections)
+    
+    Args:
+        sections: List of section dictionaries
+        section_title: Title of the section to update
+        new_html: New HTML content
+        recursive: Whether to search in nested subsections (default: True)
+    
+    Returns:
+        True if section was found and updated, False otherwise
+    """
+    if not sections or not isinstance(sections, list):
+        return False
+    
+    for section in sections:
+        if not isinstance(section, dict):
+            continue
+        
+        # Check if this is the target section
+        if section.get('title') == section_title:
+            if 'text' not in section:
+                section['text'] = {}
+            section['text']['div'] = new_html
+            return True
+        
+        # Recursively search subsections
+        if recursive and 'section' in section and isinstance(section['section'], list):
+            if update_section_html(section['section'], section_title, new_html, recursive):
+                return True
+    
+    return False
 
 
 def extract_text_content(html_content: str) -> str:

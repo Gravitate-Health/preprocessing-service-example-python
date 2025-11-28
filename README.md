@@ -9,9 +9,11 @@ This service provides robust preprocessing for FHIR ePI (electronic Product Info
 ### Key Features
 - FhirEPI model for structured ePI bundle parsing
 - HtmlElementLink extension management (CRUD operations)
+- **Recursive HTML content extraction** from nested composition sections
 - HTML content extraction, analysis, and modification (from `Composition.text.div`)
+- Section-level HTML manipulation with automatic nesting level detection
 - Standalone test runners for all major components
-- Dockerized deployment and OpenAPI integration
+- Dockerized deployment with Python 3.12 and OpenAPI integration
 - Extensive documentation and examples
 
 ## Usage Guide
@@ -39,10 +41,12 @@ python test_html_content_manager_standalone.py
 ### 2. Docker Usage
 
 #### Build and run the service
-```powershell
+```bash
 docker build -t preprocessing-service .
 docker run --rm -p 8080:8080 preprocessing-service
 ```
+
+**Note:** The Docker image uses Python 3.12-alpine for compatibility with the service dependencies.
 
 #### Generate server code from OpenAPI (if needed)
 ```powershell
@@ -109,23 +113,45 @@ remove_html_element_link(composition, 'section-title')
 
 ### HTML Content Manager
 
-**Purpose:** Extract, analyze, and modify HTML content in FHIR Composition `text.div`.
+**Purpose:** Extract, analyze, and modify HTML content in FHIR Composition `text.div` and nested sections.
 
 **Key Functions:**
-- `get_html_content(composition)`
-- `update_html_content(composition, new_html)`
-- `find_elements_by_class(html, class_name)`
-- `replace_html_section(html, start_marker, end_marker, replacement)`
-- `get_html_structure_summary(html)`
+- `get_html_content(composition)` - Extract HTML from composition text.div
+- `get_all_html_content(composition)` - **Recursively extract HTML from all sections and subsections**
+- `update_html_content(composition, new_html)` - Update composition HTML
+- `update_section_html(sections, section_title, new_html, recursive=True)` - Update specific section HTML
+- `extract_all_html_from_sections(sections)` - Recursively extract all section HTML with metadata
+- `find_elements_by_class(html, class_name)` - Find elements by CSS class
+- `replace_html_section(html, start_marker, end_marker, replacement)` - Replace HTML sections
+- `get_html_structure_summary(html)` - Analyze HTML structure
 
 **Example Usage:**
 ```python
 from preprocessor.models.html_content_manager import (
-	get_html_content, update_html_content, find_elements_by_class, get_html_structure_summary
+    get_html_content, get_all_html_content, update_section_html, 
+    find_elements_by_class, get_html_structure_summary
 )
 
 # Extract HTML from composition
 html = get_html_content(composition)
+
+# Recursively extract ALL HTML content from nested sections
+all_html = get_all_html_content(composition)
+print(f"Total sections: {all_html['total_sections']}")
+print(f"Max nesting level: {all_html['max_nesting_level']}")
+
+for section in all_html['sections']:
+    print(f"Level {section['level']}: {section['title']}")
+    print(f"  HTML length: {len(section['html'])} chars")
+    print(f"  Has subsections: {section['has_subsections']}")
+
+# Update a specific section by title (searches recursively)
+update_section_html(
+    composition['section'], 
+    'What is in this leaflet',
+    '<div>New content</div>',
+    recursive=True
+)
 
 # Find all elements with a specific class
 elements = find_elements_by_class(html, 'epi-section')
@@ -133,22 +159,41 @@ elements = find_elements_by_class(html, 'epi-section')
 # Get a summary of the HTML structure
 summary = get_html_structure_summary(html)
 print(summary)
+```
 
-# Update the HTML content in the composition
-new_html = html.replace('<h1>', '<h2>')
-update_html_content(composition, new_html)
+**FhirEPI Model Integration:**
+```python
+from preprocessor.models.fhir_epi import FhirEPI
+
+# Load and parse ePI bundle
+epi = FhirEPI.from_dict(bundle_dict)
+
+# Extract all HTML content including nested sections
+all_html = epi.get_all_html_content()
 ```
 
 ## Testing
 
 Standalone test runners are provided for all major components:
-- `test_html_element_link_standalone.py`
-- `test_html_content_manager_standalone.py`
+- `test_html_element_link_standalone.py` - Test HtmlElementLink extension management
+- `test_html_content_manager_standalone.py` - Test HTML content operations
+- `test_recursive_html_extraction.py` - **Test recursive HTML extraction from nested sections**
 
 Run with:
-```powershell
-python test_html_element_link_standalone.py
-python test_html_content_manager_standalone.py
+```bash
+python3 test_html_element_link_standalone.py
+python3 test_html_content_manager_standalone.py
+python3 test_recursive_html_extraction.py
+```
+
+### Examples
+
+Comprehensive examples demonstrating all features:
+- `example_recursive_html_extraction.py` - **Recursive HTML extraction examples with 5 different use cases**
+
+Run examples:
+```bash
+python3 example_recursive_html_extraction.py
 ```
 
 ## Documentation

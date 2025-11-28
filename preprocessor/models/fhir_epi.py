@@ -159,3 +159,25 @@ class FhirEPI(Model):
                     matching.append(entry)
         
         return matching
+
+    def get_all_html_content(self) -> dict:
+        """Get all HTML content from the composition (including nested sections)
+        
+        Extracts HTML from:
+        - composition.text.div (main composition HTML)
+        - All sections and their nested subsections recursively
+        
+        :return: Dictionary with comprehensive HTML content
+        """
+        from preprocessor.models.html_content_manager import get_all_html_content
+        
+        composition = self.get_composition()
+        if not composition:
+            return {
+                'composition_html': '',
+                'sections': [],
+                'total_sections': 0,
+                'max_nesting_level': 0
+            }
+        
+        return get_all_html_content(composition)
