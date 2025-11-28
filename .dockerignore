@@ -6,6 +6,13 @@ git_push.sh
 test-requirements.txt
 setup.py
 
+# Test scripts and folders
+test_*.py
+**/test/
+**/*test*/
+pytest.ini
+.pytest_cache/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
